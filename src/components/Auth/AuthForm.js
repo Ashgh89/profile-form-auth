@@ -1,11 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useContext } from "react";
+import AuthContext from "../../store/auth-context";
 import classes from "./AuthForm.module.css";
 
 const AuthForm = () => {
   const emailInputRef = useRef();
   const passwordInputRef = useRef();
 
+  const authCtx = useContext(AuthContext);
+
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const switchAuthModeHandler = () => {
     setIsLogin((prevState) => !prevState);
@@ -18,37 +22,57 @@ const AuthForm = () => {
     // Or we use refs and connect refs to these input elements, to then get the entered data with help of that.
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
-    // Optional: Add a Validation (We skip it now, because it has nothing to do with autentication)
 
+    // Optional: Add a Validation (We skip it now, because it has nothing to do with autentication)
+    setIsLoading(true);
+    let url;
     if (isLogin) {
+      url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBNjO7Mn2IHfiV7v9DJq7LFAgnftMKxNko";
     } else {
-      // Sign Up request
-      fetch(
-        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBNjO7Mn2IHfiV7v9DJq7LFAgnftMKxNko",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: enteredEmail,
-            password: enteredPassword,
-            returnSecureToken: true,
-          }),
-          // To ensure that the Auth REST API knows that we get som JSON data coming in here
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      ).then((res) => {
+      url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBNjO7Mn2IHfiV7v9DJq7LFAgnftMKxNko";
+    }
+    // Sign Up request
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify({
+        email: enteredEmail,
+        password: enteredPassword,
+        returnSecureToken: true,
+      }),
+      // To ensure that the Auth REST API knows that we get som JSON data coming in here
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        setIsLoading(false);
         if (res.ok) {
-          // ...
+          return res.json();
         } else {
           // Here i am using promises with then catch, but we can absolutely use async await.
           return res.json().then((data) => {
             // show an error modal
-            console.log(data);
+            // console.log(data);
+            let errorMessage = "Authentication failed!";
+            //NOTICE you can do it as well
+            // if (data && data.error && data.error.message) {
+            //   errorMessage = data.error.message;
+            // }
+
+            // alert(errorMessage);
+            throw new Error(errorMessage);
           });
         }
+      })
+      .then((data) => {
+        // console.log(data);
+        authCtx.login(data.idToken);
+      })
+      .catch((err) => {
+        alert(err.message);
       });
-    }
   };
 
   return (
@@ -69,7 +93,10 @@ const AuthForm = () => {
           />
         </div>
         <div className={classes.actions}>
-          <button>{isLogin ? "Login" : "Create Account"}</button>
+          {!isLoading && (
+            <button>{isLogin ? "Login" : "Create Account"}</button>
+          )}
+          {isLoading && <p>Sending requests ...</p>}
           <button
             type="button"
             className={classes.toggle}
