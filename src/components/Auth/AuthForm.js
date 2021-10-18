@@ -1,8 +1,10 @@
 import { useState, useRef, useContext } from "react";
+import { useHistory } from "react-router-dom";
 import AuthContext from "../../store/auth-context";
 import classes from "./AuthForm.module.css";
 
 const AuthForm = () => {
+  const history = useHistory();
   const emailInputRef = useRef();
   const passwordInputRef = useRef();
 
@@ -17,13 +19,9 @@ const AuthForm = () => {
 
   const submitHandler = (event) => {
     event.preventDefault();
-
-    // Here we can either log every keystroke with useState and then get the data from there
-    // Or we use refs and connect refs to these input elements, to then get the entered data with help of that.
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
 
-    // Optional: Add a Validation (We skip it now, because it has nothing to do with autentication)
     setIsLoading(true);
     let url;
     if (isLogin) {
@@ -60,7 +58,6 @@ const AuthForm = () => {
             // if (data && data.error && data.error.message) {
             //   errorMessage = data.error.message;
             // }
-
             // alert(errorMessage);
             throw new Error(errorMessage);
           });
@@ -69,6 +66,8 @@ const AuthForm = () => {
       .then((data) => {
         // console.log(data);
         authCtx.login(data.idToken);
+        // Start from starting page
+        history.replace("/");
       })
       .catch((err) => {
         alert(err.message);
