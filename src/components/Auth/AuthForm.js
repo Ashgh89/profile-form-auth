@@ -64,8 +64,11 @@ const AuthForm = () => {
         }
       })
       .then((data) => {
+        const expirationTime = new Date(
+          new Date().getTime() + +data.expiresIn * 10000
+        );
         // console.log(data);
-        authCtx.login(data.idToken);
+        authCtx.login(data.idToken, expirationTime.toISOString()); //Or authCtx.logIn(data.idToken, Date.now() + data.expiresIn * 1000);
         // Start from starting page
         history.replace("/");
       })
